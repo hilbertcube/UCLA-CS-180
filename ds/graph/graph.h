@@ -228,16 +228,18 @@ public:
     // Topological sort using Kahn's algorithm (BFS-based)
     std::vector<T> topological_sort() const {
         std::vector<T> result;
-        std::unordered_map<T, int> in_degree;
+        std::unordered_map<T, int> in_degree; // {vertex, in-degree}
         
         // Initialize in-degrees
+        // For each vertex (V iterations)
         for (const auto& pair : adj_list) {
             // every vertex starts with in-degree = 0
             if (!in_degree.count(pair.first)) {
                 in_degree[pair.first] = 0;
             }
             
-            // 
+            // For each edge of the vertex's adjacency list
+            // Total across ALL vertices = E iterations
             for (const auto& edge : pair.second) {
                 in_degree[edge.dest]++;
             }
@@ -358,6 +360,99 @@ public:
         std::reverse(path.begin(), path.end());
         
         return path;
+    }
+
+    // Get shortest paths from source to all other vertices using Dijkstra
+    std::unordered_map<T, std::pair<W, std::vector<T>>> shortest_paths_from_source(const T& source) const {
+        if (!adj_list.count(source)) {
+            return {}; // Return empty if source doesn't exist
+        }
+
+        std::unordered_map<T, W> distances;
+        std::unordered_map<T, T> predecessors;
+        std::unordered_set<T> visited;
+        
+        // Initialize distances
+        for (const auto& pair : adj_list) {
+            distances[pair.first] = std::numeric_limits<W>::max();
+        }
+        
+        distances[source] = W(0);
+        
+        // Priority queue: pair<distance, vertex>
+        std::priority_queue<std::pair<W, T>,
+                        std::vector<std::pair<W, T>>, 
+                        std::greater<std::pair<W, T>>> pq;
+        
+        pq.push({W(0), source});
+        
+        while (!pq.empty()) {
+            auto current_pair = pq.top();
+            pq.pop();
+            
+            W current_dist = current_pair.first;
+            T current_vertex = current_pair.second;
+            
+            if (visited.count(current_vertex)) {
+                continue;
+            }
+            
+            visited.insert(current_vertex);
+            
+            // Check all neighbors (don't stop at any specific destination)
+            for (const auto& edge : adj_list.at(current_vertex)) {
+                if (!visited.count(edge.dest)) {
+                    W new_distance = current_dist + edge.weight;
+                    
+                    if (new_distance < distances[edge.dest]) {
+                        distances[edge.dest] = new_distance;
+                        predecessors[edge.dest] = current_vertex;
+                        pq.push({new_distance, edge.dest});
+                    }
+                }
+            }
+        }
+        
+        // Build result: ( destination -> {distance, path} )
+        std::unordered_map<T, std::pair<W, std::vector<T>>> result;
+        
+        for (const auto& pair : distances) {
+            T destination = pair.first;
+            W distance = pair.second;
+            
+            if (destination == source) {
+                result[destination] = {W(0), {source}};
+                continue;
+            }
+            
+            // If unreachable
+            if (distance == std::numeric_limits<W>::max()) {
+                result[destination] = {distance, {}};
+                continue;
+            }
+            
+            // Reconstruct path
+            std::vector<T> path;
+            T current = destination;
+            
+            while (current != source) {
+                path.push_back(current);
+                if (!predecessors.count(current)) {
+                    path.clear(); // No path found
+                    break;
+                }
+                current = predecessors[current];
+            }
+            
+            if (!path.empty()) {
+                path.push_back(source);
+                std::reverse(path.begin(), path.end());
+            }
+            
+            result[destination] = {distance, path};
+        }
+        
+        return result;
     }
     
     size_t num_vertices() const { return adj_list.size(); }
