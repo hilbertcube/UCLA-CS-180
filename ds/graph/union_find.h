@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../../include/headers.hpp"
-
+#include "../../ds/headers.hpp"
 
 // Union-Find (Disjoint Set Union) data structure for Kruskal's algorithm
 template<typename T>

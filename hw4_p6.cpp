@@ -1,4 +1,4 @@
-#include "include/headers.hpp"
+#include "ds/headers.hpp"
 
 bool stairway_search(vector<vector<int>> mat, int target) {
     int n = mat.size();

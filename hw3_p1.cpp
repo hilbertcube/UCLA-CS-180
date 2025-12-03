@@ -1,4 +1,4 @@
-#include "include/headers.hpp"
+#include "ds/headers.hpp"
 
 // Input: [7, 1, 4, 10, 15]
 // Output: [4, 13]

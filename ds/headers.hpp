@@ -44,6 +44,12 @@ ostream& operator<<(ostream& os, const vector<T>& v) {
     return os;
 }
 
+template<typename A, typename B>
+ostream& operator<<(ostream& os, const pair<A, B>& p) {
+    os << '(' << p.first << ", " << p.second << ')';
+    return os;
+}
+
 template<typename T>
 ostream& operator<<(ostream& os, const deque<T>& d) {
     os << '[';

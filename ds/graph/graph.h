@@ -1,7 +1,13 @@
 #pragma once
 
-#include "../../include/headers.hpp"
+#include "../../ds/headers.hpp"
 #include "union_find.h"
+
+// Forward declarations for friend functions
+template <typename T, typename W> class Graph;
+template <typename T, typename W> struct MSTEdge;
+template <typename T, typename W> std::vector<MSTEdge<T, W>> prim_mst(const Graph<T, W>& graph);
+template <typename T, typename W> std::vector<MSTEdge<T, W>> kruskal_mst(const Graph<T, W>& graph);
 
 template <typename T, typename W = int>
 class Graph {
@@ -19,50 +25,10 @@ private:
     std::unordered_map<T, std::vector<Edge>> adj_list;
     size_t edge_count;
     
-    // Helper function for cycle detection using DFS
-    bool has_cycle_directed_helper(const T& vertex,
-                                   std::unordered_set<T>& visited,
-                                   std::unordered_set<T>& rec_stack) const {
-        visited.insert(vertex);
-        rec_stack.insert(vertex);
-        
-        if (adj_list.count(vertex)) {
-            for (const auto& edge : adj_list.at(vertex)) {
-                if (!visited.count(edge.dest)) {
-                    if (has_cycle_directed_helper(edge.dest, visited, rec_stack)) {
-                        return true;
-                    }
-                } else if (rec_stack.count(edge.dest)) {
-                    return true;
-                }
-            }
-        }
-        
-        rec_stack.erase(vertex);
-        return false;
-    }
+    // Friend function declarations for MST algorithms
+    friend std::vector<MSTEdge<T, W>> prim_mst<>(const Graph<T, W>& graph);
+    friend std::vector<MSTEdge<T, W>> kruskal_mst<>(const Graph<T, W>& graph);
     
-    // Helper function for cycle detection in undirected graph
-    bool has_cycle_undirected_helper(const T& vertex,
-                                    const T& parent,
-                                    std::unordered_set<T>& visited) const {
-        visited.insert(vertex);
-        
-        if (adj_list.count(vertex)) {
-            for (const auto& edge : adj_list.at(vertex)) {
-                if (!visited.count(edge.dest)) {
-                    if (has_cycle_undirected_helper(edge.dest, vertex, visited)) {
-                        return true;
-                    }
-                } else if (edge.dest != parent) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
-
 public:
     Graph() : edge_count(0) {}
     
@@ -193,7 +159,6 @@ public:
                         s.push(it->dest);
                     }
                 }
-                
             }
         }
         return result;
@@ -458,177 +423,6 @@ public:
     size_t num_vertices() const { return adj_list.size(); }
     size_t num_edges() const { return edge_count; }
     bool is_empty() const { return adj_list.empty(); }
-    
-    // Check if graph has a cycle
-    bool has_cycle() const {
-        if (adj_list.empty()) {
-            return false;
-        }
-        
-        std::unordered_set<T> visited;
-        std::unordered_set<T> rec_stack;
-        
-        // Try to detect cycle starting from each unvisited vertex
-        for (const auto& pair : adj_list) {
-            if (!visited.count(pair.first)) {
-                if (has_cycle_directed_helper(pair.first, visited, rec_stack)) {
-                    return true;
-                }
-            }
-        }
-        
-        return false;
-    }
-    
-    // MST Edge structure for returning results
-    struct MSTEdge {
-        T u, v;
-        W weight;
-        
-        MSTEdge(const T& u, const T& v, W w) : u(u), v(v), weight(w) {}
-        
-        bool operator<(const MSTEdge& other) const {
-            return weight < other.weight;
-        }
-    };
-    
-private:
-    // Get all edges in the graph for Kruskal's algorithm
-    std::vector<MSTEdge> get_all_edges() const {
-        std::vector<MSTEdge> edges;
-        std::set<std::pair<T, T>> added_edges; // To avoid duplicate edges in undirected graph
-        
-        for (const auto& vertex_pair : adj_list) {
-            const T& u = vertex_pair.first;
-            for (const auto& edge : vertex_pair.second) {
-                const T& v = edge.dest;
-                W weight = edge.weight;
-                
-                // For undirected graphs, avoid adding the same edge twice
-                // We'll add the edge only if we haven't seen the reverse edge
-                std::pair<T, T> edge_pair = (u < v) ? std::make_pair(u, v) : std::make_pair(v, u);
-                
-                if (added_edges.find(edge_pair) == added_edges.end()) {
-                    edges.emplace_back(u, v, weight);
-                    added_edges.insert(edge_pair);
-                }
-            }
-        }
-        
-        return edges;
-    }
-
-public:
-    
-    // Prim's algorithm for Minimum Spanning Tree
-    std::vector<MSTEdge> prim_mst() const {
-        if (adj_list.empty()) {
-            return {};
-        }
-        
-        std::vector<MSTEdge> mst;
-        std::unordered_set<T> in_mst;
-        
-        // Start with the first vertex
-        T start_vertex = adj_list.begin()->first;
-        in_mst.insert(start_vertex);
-        
-        // Priority queue to store edges: {weight, {u, v}}
-        std::priority_queue<std::pair<W, std::pair<T, T>>, 
-                           std::vector<std::pair<W, std::pair<T, T>>>, 
-                           std::greater<std::pair<W, std::pair<T, T>>>> pq;
-        
-        // Add all edges from start vertex to priority queue
-        for (const auto& edge : adj_list.at(start_vertex)) {
-            pq.push({edge.weight, {start_vertex, edge.dest}});
-        }
-        
-        while (!pq.empty() && mst.size() < adj_list.size() - 1) {
-            auto current = pq.top();
-            pq.pop();
-            
-            W weight = current.first;
-            T u = current.second.first;
-            T v = current.second.second;
-            
-            // If both vertices are already in MST, skip this edge
-            if (in_mst.count(u) && in_mst.count(v)) {
-                continue;
-            }
-            
-            // Add edge to MST
-            mst.emplace_back(u, v, weight);
-            
-            // Add the new vertex to MST
-            T new_vertex = in_mst.count(u) ? v : u;
-            in_mst.insert(new_vertex);
-            
-            // Add all edges from new vertex to priority queue
-            if (adj_list.count(new_vertex)) {
-                for (const auto& edge : adj_list.at(new_vertex)) {
-                    if (!in_mst.count(edge.dest)) {
-                        pq.push({edge.weight, {new_vertex, edge.dest}});
-                    }
-                }
-            }
-        }
-        
-        return mst;
-    }
-    
-    // Kruskal's algorithm for Minimum Spanning Tree
-    std::vector<MSTEdge> kruskal_mst() const {
-        if (adj_list.empty()) {
-            return {};
-        }
-        
-        std::vector<MSTEdge> mst;
-        std::vector<MSTEdge> edges = get_all_edges();
-        
-        // Sort edges by weight
-        std::sort(edges.begin(), edges.end());
-        
-        // Initialize Union-Find structure
-        UnionFind<T> uf;
-        for (const auto& vertex_pair : adj_list) {
-            uf.make_set(vertex_pair.first);
-        }
-        
-        // Process edges in order of increasing weight
-        for (const auto& edge : edges) {
-            if (uf.union_sets(edge.u, edge.v)) {
-                mst.push_back(edge);
-                
-                // If we have n-1 edges, we're done (n = number of vertices)
-                if (mst.size() == adj_list.size() - 1) {
-                    break;
-                }
-            }
-        }
-        
-        return mst;
-    }
-    
-    // Helper function to print MST results
-    void print_mst(const std::vector<MSTEdge>& mst, const std::string& algorithm_name) const {
-        std::cout << "\n=== " << algorithm_name << " MST ===" << std::endl;
-        
-        if (mst.empty()) {
-            std::cout << "No MST found (graph might be empty or disconnected)" << std::endl;
-            return;
-        }
-        
-        W total_weight = W(0);
-        std::cout << "Edges in MST:" << std::endl;
-        
-        for (const auto& edge : mst) {
-            std::cout << edge.u << " -- " << edge.v << " (weight: " << edge.weight << ")" << std::endl;
-            total_weight += edge.weight;
-        }
-        
-        std::cout << "Total weight: " << total_weight << std::endl;
-        std::cout << "Number of edges: " << mst.size() << std::endl;
-    }
     
     // Display the graph (for debugging)
     void print_graph() const {

@@ -1,7 +1,6 @@
-#include "../../include/headers.hpp"
+#include "../../ds/headers.hpp"
 
 /**
- * Merge function to combine two sorted subarrays
  * @param arr: the array to be sorted
  * @param left: starting index of left subarray
  * @param mid: ending index of left subarray
@@ -68,20 +67,11 @@ void mergeSort(vector<int>& arr, int left, int right) {
     merge(arr, left, mid, right);
 }
 
-/**
- * Wrapper function for merge sort
- * @param arr: the array to be sorted
- */
 void mergeSort(vector<int>& arr) {
     if (arr.size() <= 1) return;
     mergeSort(arr, 0, arr.size() - 1);
 }
 
-/**
- * Function to check if an array is sorted
- * @param arr: the array to check
- * @return: true if sorted, false otherwise
- */
 bool isSorted(const vector<int>& arr) {
     for (size_t i = 1; i < arr.size(); i++) {
         if (arr[i] < arr[i - 1]) {

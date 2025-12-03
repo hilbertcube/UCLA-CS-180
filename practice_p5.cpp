@@ -1,16 +1,16 @@
-#include "include/headers.hpp"
+#include "ds/headers.hpp"
 
-vector<int> d = {1, 2, 5, 10, 20, 50, 100, 500, 1000};
+vector<int> coins = {1, 2, 5, 10, 20, 50, 100, 500, 1000};
 
 int make_change(int n) {
     int output = 0;
-    int i = d.size() - 1;
+    int i = coins.size() - 1;
     
     while(i >= 0 && n > 0) {
-        if(n >= d[i]) {
-            int coins_used = n / d[i];
+        if(n >= coins[i]) {
+            int coins_used = n / coins[i];
             output += coins_used;
-            n %= d[i];
+            n %= coins[i];
         }
         i--;
     }
