@@ -1,4 +1,12 @@
 #pragma once
+#include "../graph/graph.h"
+
+// Forward declarations
+template <typename T, typename W>
+class FlowGraph;
+
+template <typename T, typename W>
+std::pair<W, std::vector<T>> find_max_bottleneck_path(FlowGraph<T, W>& fg, const T& s, const T& t);
 
 // Flow Graph class that wraps Graph<T, W> to handle flow networks
 template <typename T, typename W = int>
@@ -8,6 +16,7 @@ private:
     std::unordered_map<T, std::unordered_map<T, W>> capacity;
     std::unordered_map<T, std::unordered_map<T, W>> flow;
     
+    friend std::pair<W, std::vector<T>> find_max_bottleneck_path<T, W>(FlowGraph<T, W>& fg, const T& s, const T& t);
 public:
     FlowGraph() {}
     
